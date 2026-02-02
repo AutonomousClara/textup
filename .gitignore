@@ -42,3 +42,4 @@ next-env.d.ts
 
 # Internal specs
 CLAUDE.md
+.vercel

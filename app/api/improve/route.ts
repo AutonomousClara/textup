@@ -29,8 +29,9 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json()
     const { apiKey, text, mode } = body
     
-    // Validate API key
-    if (!validateApiKey(apiKey)) {
+    // Validate API key (só exige se servidor não tem key configurada)
+    const hasServerKey = !!process.env.GROQ_API_KEY
+    if (!hasServerKey && !validateApiKey(apiKey)) {
       return NextResponse.json(
         { error: 'API key inválida.' },
         { status: 400 }

@@ -28,7 +28,14 @@ interface ImproveTextError {
   code?: string
 }
 
-export async function improveText({ apiKey, text, mode }: ImproveTextParams): Promise<ImproveTextResult | ImproveTextError> {
+export async function improveText({ apiKey: providedKey, text, mode }: ImproveTextParams): Promise<ImproveTextResult | ImproveTextError> {
+  // Usa a key do servidor se disponível, senão usa a fornecida (BYOK)
+  const apiKey = process.env.GROQ_API_KEY || providedKey
+  
+  if (!apiKey) {
+    return { error: 'API key não configurada.', code: 'NO_API_KEY' }
+  }
+  
   const systemPrompt = MODE_PROMPTS[mode]
   
   const messages: GroqMessage[] = [

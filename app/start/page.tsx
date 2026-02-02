@@ -1,11 +1,51 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import ApiKeySetup from '@/components/onboarding/ApiKeySetup'
-
-export const metadata = {
-  title: 'Configurar API Key - TextUp',
-}
+import { getApiKey, validateApiKey } from '@/lib/storage'
 
 export default function StartPage() {
+  const router = useRouter()
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    async function checkConfig() {
+      // Primeiro verifica se já tem key salva localmente
+      const savedKey = getApiKey()
+      if (savedKey && validateApiKey(savedKey)) {
+        router.push('/edit')
+        return
+      }
+
+      // Depois verifica se o servidor tem key configurada
+      try {
+        const res = await fetch('/api/config')
+        const data = await res.json()
+        if (data.hasServerKey) {
+          // Servidor tem key, pode ir direto pro edit
+          router.push('/edit')
+          return
+        }
+      } catch (e) {
+        // Se falhar, assume que precisa de key
+      }
+
+      setChecking(false)
+    }
+
+    checkConfig()
+  }, [router])
+
+  if (checking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-400 animate-pulse">Carregando...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}

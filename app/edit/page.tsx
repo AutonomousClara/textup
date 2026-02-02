@@ -20,15 +20,35 @@ export default function EditPage() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [apiKey, setApiKey] = useState<string | null>(null)
+  const [hasServerKey, setHasServerKey] = useState(false)
+  const [ready, setReady] = useState(false)
   
   // Check for API key on mount
   useEffect(() => {
-    const key = getApiKey()
-    if (!key) {
+    async function checkAccess() {
+      const key = getApiKey()
+      if (key) {
+        setApiKey(key)
+        setReady(true)
+        return
+      }
+
+      // Verifica se servidor tem key
+      try {
+        const res = await fetch('/api/config')
+        const data = await res.json()
+        if (data.hasServerKey) {
+          setHasServerKey(true)
+          setReady(true)
+          return
+        }
+      } catch (e) {}
+
+      // Nenhuma key disponível
       router.push('/start')
-    } else {
-      setApiKey(key)
     }
+
+    checkAccess()
   }, [router])
   
   const handleSubmit = async () => {
@@ -53,7 +73,7 @@ export default function EditPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          apiKey,
+          apiKey: apiKey || '', // Se vazio, backend usa a key do servidor
           text,
           mode,
         }),
@@ -94,7 +114,7 @@ export default function EditPage() {
   }
   
   // Don't render until we check for API key
-  if (apiKey === null) {
+  if (!ready) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
@@ -110,13 +130,15 @@ export default function EditPage() {
           <Link href="/" className="text-xl font-bold">
             TextUp <span className="text-2xl">✍️</span>
           </Link>
-          <button
-            onClick={handleConfigClick}
-            className="text-gray-500 hover:text-gray-300 transition-colors"
-            title="Alterar API Key"
-          >
-            ⚙️ Config
-          </button>
+          {apiKey && (
+            <button
+              onClick={handleConfigClick}
+              className="text-gray-500 hover:text-gray-300 transition-colors"
+              title="Alterar API Key"
+            >
+              ⚙️ Config
+            </button>
+          )}
         </div>
       </header>
       
